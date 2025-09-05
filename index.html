@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WITH RESPECT TO MEHMED GRESIYENKO 2025</title>
+  <style>
+    body { font-family: sans-serif; background: white; color: #000; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
+    h2 { text-align: center; font-size: 18px; margin: 8px 0; }
+    #graphToggle { margin: 5px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+    #pairs { display: flex; flex-wrap: nowrap; overflow-x: auto; margin: 8px 0; position: relative; width: 100%; max-width: 420px; }
+    button.pair-btn { padding: 8px 12px; margin: 4px; border: none; border-radius: 6px; background: #eee; cursor: pointer; font-size: 14px; flex: 0 0 auto; }
+    button.pair-btn.active { background: #333; color: #fff; }
+    #chart { width: 100%; max-width: 400px; max-height: 300px; }
+    .row-container { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 420px; position: relative; }
+    #numbersExtra, #numbersTop, #numbers, #differences { display: flex; flex-wrap: nowrap; justify-content: center; overflow-x: auto; margin: 5px 0; width: 100%; max-width: 420px; position: relative; padding-top: 6px; padding-bottom: 6px; }
+    .separator { width: 100%; height: 2px; background: black; margin: 4px 0; }
+    .num-box { flex: 0 0 22px; height: 22px; display: flex; justify-content: center; align-items: center; margin: 1px; color: white; font-size: 12px; border-radius: 4px; }
+
+    /* GMT kutusu (siyah arka plan) */
+    #time {
+      font-size: 12px;
+      font-weight: bold;
+      background: black;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      min-width: 80px;
+      text-align: center;
+      margin-left: auto; /* sağa yasla */
+    }
+
+    /* Fiyat kutusu (aynı boyutta ve sağa hizalı) */
+    #price {
+      font-size: 12px;
+      font-weight: bold;
+      background: #999;
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      min-width: 80px;
+      text-align: center;
+      margin-left: auto; /* sağa yasla */
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>WITH RESPECT TO MEHMED GRESIYENKO 2025</h2>
+  <button id="graphToggle" onclick="toggleGraph()">Z.Z</button>
+
+  <div id="analyzer">
+    <div id="pairs">
+      <button class="pair-btn active" onclick="selectPair(this, 'R_100')">Volatility 100</button>
+      <button class="pair-btn" onclick="selectPair(this, 'R_75')">Volatility 75</button>
+      <button class="pair-btn" onclick="selectPair(this, 'R_50')">Volatility 50</button>
+      <button class="pair-btn" onclick="selectPair(this, 'R_25')">Volatility 25</button>
+      <button class="pair-btn" onclick="selectPair(this, 'R_10')">Volatility 10</button>
+    </div>
+
+    <!-- GMT kutusu Volatility 25'in altında en sağda -->
+    <div style="width:100%; max-width:420px; display:flex;">
+      <div id="time"></div>
+    </div>
+
+    <div id="chartContainer" style="position: relative; width: 100%; max-width: 400px;">
+      <canvas id="chart"></canvas>
+    </div>
+
+    <!-- Fiyat kutusu sayı sütunlarının hemen üstünde, sağda -->
+    <div style="width:100%; max-width:420px; display:flex;">
+      <div id="price">0.00</div>
+    </div>
+
+    <div class="row-container">
+      <div id="numbersExtra"></div>
+      <div class="separator"></div>
+      <div id="numbersTop"></div>
+      <div class="separator"></div>
+      <div id="numbers"></div>
+      <div class="separator"></div>
+      <div id="differences"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let ws;
+    let prices = [], digits = [], decimalDigits = [], combinedDigits = [], wormLines = [], wormLinesTop = [], wormLinesExtra = [];
+    let currentPair = 'R_100', currentGraph = 'Z.Z';
+
+    function toggleGraph() {
+      if (currentGraph === 'XZ') {
+        currentGraph = 'ZZ';
+      } else if (currentGraph === 'ZZ') {
+        currentGraph = 'Z.Z';
+      } else {
+        currentGraph = 'XZ';
+      }
+      document.getElementById('graphToggle').innerText = currentGraph;
+    }
+
+    const ctx = document.getElementById('chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Array.from({length: 20}, (_, i) => (i + 1).toString()),
+        datasets: [{
+          data: Array(20).fill(null),
+          borderColor: 'black',
+          backgroundColor: 'rgba(0,0,0,0.05)',
+          pointBackgroundColor: Array(20).fill('black'),
+          pointRadius: 8,
+          pointHoverRadius: 10
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { y: { beginAtZero: false } },
+        animation: false
+      },
+      plugins: [{
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          const meta = chart.getDatasetMeta(0);
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          meta.data.forEach((point, index) => {
+            let text;
+            if (currentGraph === 'XZ') {
+              text = decimalDigits[index] || '';
+            } else if (currentGraph === 'ZZ') {
+              text = digits[index] || '';
+            } else {
+              text = combinedDigits[index] || '';
+            }
+            ctx.fillStyle = '#fff';
+            ctx.fillText(text, point.x, point.y);
+          });
+        }
+      }]
+    });
+
+    function selectPair(element, pair) {
+      currentPair = pair;
+      document.querySelectorAll('.pair-btn').forEach(btn => btn.classList.remove('active'));
+      element.classList.add('active');
+      if (ws) ws.close();
+      prices = [];
+      digits = [];
+      decimalDigits = [];
+      combinedDigits = [];
+      wormLines = [];
+      wormLinesTop = [];
+      wormLinesExtra = [];
+      document.getElementById('numbers').innerHTML = '';
+      document.getElementById('numbersTop').innerHTML = '';
+      document.getElementById('numbersExtra').innerHTML = '';
+      document.getElementById('differences').innerHTML = '';
+      startWS();
+    }
+
+    function updateWorm(price) {
+      if (prices.length < 20) return;
+      const last20 = prices.slice(-20);
+      const max = Math.max(...last20.slice(0, -1));
+      const min = Math.min(...last20.slice(0, -1));
+      const last = last20[last20.length - 1];
+      let color = 'lightgreen';
+      if (last > max) color = 'blue';
+      else if (last < min) color = 'red';
+      wormLines.push(color);
+      wormLinesTop.push(color);
+      wormLinesExtra.push(color);
+      if (wormLines.length > 20) wormLines.shift();
+      if (wormLinesTop.length > 20) wormLinesTop.shift();
+      if (wormLinesExtra.length > 20) wormLinesExtra.shift();
+    }
+
+    function renderWormLines(containerId, wormArray) {
+      const container = document.getElementById(containerId);
+      const boxes = container.querySelectorAll('.num-box');
+      container.querySelectorAll('.worm-line').forEach(e => e.remove());
+      boxes.forEach((box, idx) => {
+        if (wormArray[idx]) {
+          const line = document.createElement('div');
+          line.className = 'worm-line';
+          line.style.position = 'absolute';
+          line.style.width = box.offsetWidth + 'px';
+          line.style.height = '3px';
+          line.style.left = box.offsetLeft + 'px';
+          line.style.top = (box.offsetTop + box.offsetHeight + 0.2) + 'px';
+          line.style.borderTop = '3px solid ' + wormArray[idx];
+          line.style.zIndex = '5';
+          container.appendChild(line);
+        }
+      });
+    }
+
+    function startWS() {
+      ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ ticks: currentPair, subscribe: 1 }));
+      };
+      ws.onmessage = (msg) => {
+        const data = JSON.parse(msg.data);
+        if (data.tick) {
+          const price = parseFloat(data.tick.quote);
+          prices.push(price);
+          if (prices.length > 20) prices.shift();
+
+          const priceStr = data.tick.quote.toString();
+          const decimalPart = priceStr.split('.')[1] || '0';
+          decimalDigits.push(decimalPart.slice(-1));
+          if (decimalDigits.length > 20) decimalDigits.shift();
+
+          const lastTwo = Math.floor(price).toString().slice(-2);
+          digits.push(lastTwo);
+          if (digits.length > 20) digits.shift();
+
+          const lastIntDigit = Math.floor(price).toString().slice(-1);
+          const firstDecDigit = decimalPart.charAt(0);
+          const combined = lastIntDigit + ',' + firstDecDigit;
+          combinedDigits.push(combined);
+          if (combinedDigits.length > 20) combinedDigits.shift();
+
+          // Price color and text
+          let priceColor = '#999';
+          if (prices.length > 1) {
+            priceColor = price > prices[prices.length - 2] ? 'green' :
+                         price < prices[prices.length - 2] ? 'red' : '#999';
+          }
+          document.getElementById('price').style.background = priceColor;
+          document.getElementById('price').innerText = price.toLocaleString('de-DE');
+
+          // Update boxes
+          const numbersExtraDiv = document.getElementById('numbersExtra');
+          const numbersTopDiv = document.getElementById('numbersTop');
+          const numbersDiv = document.getElementById('numbers');
+          const differencesDiv = document.getElementById('differences');
+          numbersExtraDiv.innerHTML = '';
+          numbersTopDiv.innerHTML = '';
+          numbersDiv.innerHTML = '';
+          differencesDiv.innerHTML = '';
+
+          let colors = [];
+          for (let i = 0; i < digits.length; i++) {
+            const up = i > 0 && prices[i] > prices[i - 1];
+            const down = i > 0 && prices[i] < prices[i - 1];
+            const color = up ? 'blue' : down ? 'red' : '#666';
+            colors.push(color);
+
+            const box = document.createElement('div');
+            box.className = 'num-box';
+            box.style.background = color;
+            box.innerText = digits[i];
+            numbersDiv.appendChild(box);
+
+            const boxExtra = document.createElement('div');
+            boxExtra.className = 'num-box';
+            boxExtra.style.background = color;
+            boxExtra.innerText = combinedDigits[i] || '';
+            numbersExtraDiv.appendChild(boxExtra);
+
+            const boxTop = document.createElement('div');
+            boxTop.className = 'num-box';
+            boxTop.style.background = color;
+            boxTop.innerText = decimalDigits[i] || '0';
+            numbersTopDiv.appendChild(boxTop);
+          }
+
+          // Differences row
+          for (let i = 0; i < digits.length - 1; i++) {
+            const diff = Math.abs(parseInt(digits[i + 1]) - parseInt(digits[i]));
+            const diffBox = document.createElement('div');
+            diffBox.className = 'num-box';
+            diffBox.style.background = colors[i + 1];
+            diffBox.innerText = diff;
+            differencesDiv.appendChild(diffBox);
+          }
+
+          // Auto-scroll
+          numbersExtraDiv.scrollLeft = numbersExtraDiv.scrollWidth;
+          numbersTopDiv.scrollLeft = numbersTopDiv.scrollWidth;
+          numbersDiv.scrollLeft = numbersDiv.scrollWidth;
+          differencesDiv.scrollLeft = differencesDiv.scrollWidth;
+
+          // Update chart
+          chart.data.datasets[0].data = prices;
+          chart.data.datasets[0].pointBackgroundColor = prices.map((p, i) =>
+            i > 0 && p > prices[i - 1] ? 'blue' :
+            i > 0 && p < prices[i - 1] ? 'red' : 'gray'
+          );
+          chart.data.labels = Array.from({length: prices.length}, (_, i) => (i + 1).toString());
+          chart.update();
+
+          // Worm lines
+          updateWorm(price);
+          setTimeout(() => {
+            renderWormLines('numbersExtra', wormLinesExtra);
+            renderWormLines('numbersTop', wormLinesTop);
+            renderWormLines('numbers', wormLines);
+            renderWormLines('differences', wormLines);
+          }, 50);
+        }
+      };
+    }
+
+    // GMT time updater
+    function updateTime() {
+      const now = new Date();
+      const hh = now.getUTCHours().toString().padStart(2, '0');
+      const mm = now.getUTCMinutes().toString().padStart(2, '0');
+      const ss = now.getUTCSeconds().toString().padStart(2, '0');
+      document.getElementById('time').innerText = `GMT ${hh}:${mm}:${ss}`;
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    startWS();
+  </script>
+</body>
+</html>
